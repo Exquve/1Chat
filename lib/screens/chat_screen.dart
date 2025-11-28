@@ -33,6 +33,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   
   Timer? _autoMessageTimer;
   bool _isContactTyping = false;
+  bool _showScrollToBottom = false;
   final List<String> _autoMessages = [
     'Ne yapıyorsun? 🤔',
     'Bugün hava nasıl orada?',
@@ -77,8 +78,34 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       });
     });
     
+    // Scroll listener - kullanıcı yukarıdaysa butonu göster
+    _scrollController.addListener(_onScroll);
+    
     // Her 10 saniyede bir otomatik mesaj başlat
     _startAutoMessages();
+  }
+  
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+    
+    final isAtBottom = _scrollController.position.pixels >= 
+        _scrollController.position.maxScrollExtent - 100;
+    
+    if (_showScrollToBottom == isAtBottom) {
+      setState(() {
+        _showScrollToBottom = !isAtBottom;
+      });
+    }
+  }
+  
+  void _scrollToBottom() {
+    if (_scrollController.hasClients) {
+      _scrollController.animateTo(
+        _scrollController.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
+    }
   }
   
   void _startAutoMessages() {
@@ -220,7 +247,52 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       appBar: _buildAnimatedAppBar(isDark),
       body: Column(
         children: [
-          Expanded(child: _buildMessageList(isDark)),
+          Expanded(
+            child: Stack(
+              children: [
+                _buildMessageList(isDark),
+                // Aşağı kaydır butonu
+                if (_showScrollToBottom)
+                  Positioned(
+                    right: 16,
+                    bottom: 16,
+                    child: TweenAnimationBuilder<double>(
+                      tween: Tween(begin: 0.0, end: 1.0),
+                      duration: const Duration(milliseconds: 200),
+                      curve: Curves.easeOut,
+                      builder: (context, value, child) {
+                        return Transform.scale(
+                          scale: value,
+                          child: GestureDetector(
+                            onTap: _scrollToBottom,
+                            child: Container(
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                gradient: AppColors.primaryGradient,
+                                shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: AppColors.primaryColor.withOpacity(0.4),
+                                    blurRadius: 12,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: const Icon(
+                                Icons.keyboard_arrow_down_rounded,
+                                color: Colors.white,
+                                size: 28,
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+              ],
+            ),
+          ),
           _buildAnimatedInputBar(isDark),
         ],
       ),
