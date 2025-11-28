@@ -34,6 +34,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   Timer? _autoMessageTimer;
   bool _isContactTyping = false;
   bool _showScrollToBottom = false;
+  int _unreadCount = 0;
   final List<String> _autoMessages = [
     'Ne yapıyorsun? 🤔',
     'Bugün hava nasıl orada?',
@@ -94,6 +95,10 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     if (_showScrollToBottom == isAtBottom) {
       setState(() {
         _showScrollToBottom = !isAtBottom;
+        // En alta gelince okunmamış sayısını sıfırla
+        if (isAtBottom) {
+          _unreadCount = 0;
+        }
       });
     }
   }
@@ -106,6 +111,10 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         curve: Curves.easeOut,
       );
     }
+    // En alta indiğinde okunmamış sayısını sıfırla
+    setState(() {
+      _unreadCount = 0;
+    });
   }
   
   void _startAutoMessages() {
@@ -150,6 +159,10 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
           isSeen: false,
         ),
       );
+      // Kullanıcı yukarıdaysa okunmamış sayısını artır
+      if (!isAtBottom) {
+        _unreadCount++;
+      }
     });
     
     // Sadece kullanıcı en alttaysa scroll yap
@@ -265,25 +278,68 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                           scale: value,
                           child: GestureDetector(
                             onTap: _scrollToBottom,
-                            child: Container(
-                              width: 40,
-                              height: 40,
-                              decoration: BoxDecoration(
-                                gradient: AppColors.primaryGradient,
-                                shape: BoxShape.circle,
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: AppColors.primaryColor.withOpacity(0.4),
-                                    blurRadius: 12,
-                                    offset: const Offset(0, 4),
+                            child: Stack(
+                              clipBehavior: Clip.none,
+                              children: [
+                                Container(
+                                  width: 40,
+                                  height: 40,
+                                  decoration: BoxDecoration(
+                                    gradient: AppColors.primaryGradient,
+                                    shape: BoxShape.circle,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: AppColors.primaryColor.withOpacity(0.4),
+                                        blurRadius: 12,
+                                        offset: const Offset(0, 4),
+                                      ),
+                                    ],
                                   ),
-                                ],
-                              ),
-                              child: const Icon(
-                                Icons.keyboard_arrow_down_rounded,
-                                color: Colors.white,
-                                size: 28,
-                              ),
+                                  child: const Icon(
+                                    Icons.keyboard_arrow_down_rounded,
+                                    color: Colors.white,
+                                    size: 28,
+                                  ),
+                                ),
+                                // Okunmamış mesaj badge
+                                if (_unreadCount > 0)
+                                  Positioned(
+                                    top: -5,
+                                    right: -5,
+                                    child: TweenAnimationBuilder<double>(
+                                      tween: Tween(begin: 0.0, end: 1.0),
+                                      duration: const Duration(milliseconds: 300),
+                                      curve: Curves.elasticOut,
+                                      builder: (context, scale, child) {
+                                        return Transform.scale(
+                                          scale: scale,
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                            decoration: BoxDecoration(
+                                              color: Colors.red,
+                                              borderRadius: BorderRadius.circular(10),
+                                              boxShadow: [
+                                                BoxShadow(
+                                                  color: Colors.red.withOpacity(0.4),
+                                                  blurRadius: 6,
+                                                  offset: const Offset(0, 2),
+                                                ),
+                                              ],
+                                            ),
+                                            child: Text(
+                                              _unreadCount > 99 ? '99+' : _unreadCount.toString(),
+                                              style: const TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 11,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ),
+                              ],
                             ),
                           ),
                         );
