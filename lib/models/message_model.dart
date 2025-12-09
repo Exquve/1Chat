@@ -14,6 +14,8 @@ class MessageModel {
   final String messageId;
   final bool isSeen;
   final String? imageUrl;
+  final List<String>? mediaUrls; // Çoklu medya desteği
+  final String? thumbnailUrl; // Video için thumbnail
 
   MessageModel({
     required this.senderId,
@@ -24,6 +26,8 @@ class MessageModel {
     required this.messageId,
     required this.isSeen,
     this.imageUrl,
+    this.mediaUrls,
+    this.thumbnailUrl,
   });
 
   Map<String, dynamic> toMap() {
@@ -36,6 +40,8 @@ class MessageModel {
       'messageId': messageId,
       'isSeen': isSeen,
       'imageUrl': imageUrl,
+      'mediaUrls': mediaUrls,
+      'thumbnailUrl': thumbnailUrl,
     };
   }
 
@@ -52,6 +58,8 @@ class MessageModel {
       messageId: map['messageId'] ?? '',
       isSeen: map['isSeen'] ?? false,
       imageUrl: map['imageUrl'],
+      mediaUrls: map['mediaUrls'] != null ? List<String>.from(map['mediaUrls']) : null,
+      thumbnailUrl: map['thumbnailUrl'],
     );
   }
 }
